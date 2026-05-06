@@ -1,0 +1,15 @@
+# macOS
+.DS_Store
+
+# Xcode / Swift
+.build/
+*.xcodeproj
+*.xcworkspace
+DerivedData/
+
+# App bundles
+dist/*.zip
+
+# Secrets
+credentials.json
+token.json
