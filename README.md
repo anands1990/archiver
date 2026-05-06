@@ -2,7 +2,7 @@
 
 A minimal, native macOS menu bar app that downloads books from [archive.org](https://archive.org) as PDFs and uploads them to Google Drive — with optional metadata extraction via local LM Studio.
 
-![Screenshot](screenshot.png)
+![Screenshot](<img width="1856" height="2304" alt="Gemini_Generated_Image_d1tjsjd1tjsjd1tj" src="https://github.com/user-attachments/assets/9d8a5e7b-95b8-4145-9c2d-ac7de7ab1bc9" />
 
 ## Features
 
