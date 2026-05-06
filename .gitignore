@@ -13,3 +13,4 @@ dist/*.zip
 # Secrets
 credentials.json
 token.json
+dist/
