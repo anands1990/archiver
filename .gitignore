@@ -6,11 +6,21 @@
 *.xcodeproj
 *.xcworkspace
 DerivedData/
+.swiftpm/
 
 # App bundles
+dist/
 dist/*.zip
+
+# Python sidecar
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+
+# Logs and local runtime artefacts
+*.log
 
 # Secrets
 credentials.json
 token.json
-dist/

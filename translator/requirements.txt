@@ -1,0 +1,15 @@
+fastapi>=0.110
+uvicorn>=0.29
+torch>=2.2
+# IndicTrans2 + IndicTransToolkit target transformers 4.x. transformers 5.x
+# removed tokenization_utils and breaks the toolkit's imports, so pin 4.45.0
+# with a matching pre-1.0 huggingface_hub.
+transformers==4.45.0
+huggingface_hub==0.26.5
+tokenizers>=0.20,<0.21
+sentencepiece>=0.2.0
+sacremoses>=0.0.53
+pandas>=2.0
+indic-nlp-library>=0.92
+IndicTransToolkit>=0.1.5
+pydantic>=2.6

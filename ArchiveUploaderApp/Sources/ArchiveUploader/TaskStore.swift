@@ -7,6 +7,8 @@ enum UploadStatus: String, CaseIterable {
     case extractingMetadata = "Metadata"
     case reviewing = "Reviewing"
     case downloading = "Downloading"
+    case extractingText = "Reading"
+    case translating = "Translating"
     case uploading = "Uploading"
     case completed = "Completed"
     case failed = "Failed"
@@ -40,7 +42,11 @@ final class TaskStore {
     var pendingMetadata: ExtractedMetadata?
     var pendingTaskID: UUID?
 
-    func addTask(url: String) {
+    /// Inserts a new task at the top of the history and returns it. Callers must
+    /// pass the returned `id` to `updateTask` — minting a `UUID()` at the call
+    /// site instead silently orphans the row, so nothing ever updates its state.
+    @discardableResult
+    func addTask(url: String) -> UploadTask {
         let task = UploadTask(
             url: url,
             status: .idle,
@@ -52,6 +58,7 @@ final class TaskStore {
         currentStatus = .idle
         currentMessage = "Queued"
         currentProgress = nil
+        return task
     }
 
     func updateTask(id: UUID, status: UploadStatus, message: String, progress: Double? = nil, title: String? = nil, driveLink: String? = nil) {

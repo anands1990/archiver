@@ -65,7 +65,13 @@ enum GoogleDriveError: Error, LocalizedError {
 }
 
 final class GoogleDriveClient {
-    private let session = URLSession.shared
+    private let session: URLSession = {
+        let config = URLSessionConfiguration.default
+        // Multipart uploads of large PDFs can take many minutes.
+        config.timeoutIntervalForRequest = 1800
+        config.timeoutIntervalForResource = 0
+        return URLSession(configuration: config)
+    }()
 
     // MARK: - Credentials
 
@@ -162,13 +168,21 @@ final class GoogleDriveClient {
         let code: String = try await withCheckedThrowingContinuation { continuation in
             server.onRequest = { requestURL in
                 server.stop()
-                if let c = URLComponents(url: requestURL, resolvingAgainstBaseURL: false),
-                   let items = c.queryItems,
-                   let codeItem = items.first(where: { $0.name == "code" })?.value {
-                    continuation.resume(returning: codeItem)
-                } else {
+                guard let components = URLComponents(url: requestURL, resolvingAgainstBaseURL: false),
+                      let items = components.queryItems else {
                     continuation.resume(throwing: GoogleDriveError.authFailed("No authorization code received"))
+                    return
                 }
+                // Guard against CSRF: the state we sent must come back unchanged.
+                guard items.first(where: { $0.name == "state" })?.value == state else {
+                    continuation.resume(throwing: GoogleDriveError.authFailed("State mismatch — authorisation rejected"))
+                    return
+                }
+                guard let codeItem = items.first(where: { $0.name == "code" })?.value else {
+                    continuation.resume(throwing: GoogleDriveError.authFailed("No authorization code received"))
+                    return
+                }
+                continuation.resume(returning: codeItem)
             }
             NSWorkspace.shared.open(components.url!)
         }
@@ -234,6 +248,48 @@ final class GoogleDriveClient {
 
     // MARK: - Upload
 
+    /// True when a file with this exact name already lives in the destination
+    /// folder (or Drive root). Lets the pipeline report "already exists" instead
+    /// of quietly stacking a second copy of the same book every re-run.
+    func hasExistingFile(named name: String) async throws -> Bool {
+        let accessToken = try await ensureValidToken()
+        var components = URLComponents(string: "https://www.googleapis.com/drive/v3/files")!
+        let folder = AppConfig.driveFolderID.isEmpty ? "root" : AppConfig.driveFolderID
+        components.queryItems = [
+            URLQueryItem(name: "q", value: "name = '\(Self.escapeDriveQuery(name))' and '\(folder)' in parents and trashed = false"),
+            URLQueryItem(name: "fields", value: "files(id)"),
+            URLQueryItem(name: "pageSize", value: "1"),
+        ]
+        var request = URLRequest(url: components.url!)
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            // A failed lookup should never block an upload; treat as "not found".
+            return false
+        }
+        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let files = json["files"] as? [[String: Any]] else {
+            return false
+        }
+        return !files.isEmpty
+    }
+
+    /// Drive's query language is single-quote delimited.
+    private static func escapeDriveQuery(_ value: String) -> String {
+        value.replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "'", with: "\\'")
+    }
+
+    private static func mimeType(for url: URL) -> String {
+        switch url.pathExtension.lowercased() {
+        case "pdf": return "application/pdf"
+        case "md", "markdown": return "text/markdown"
+        case "txt": return "text/plain"
+        default: return "application/octet-stream"
+        }
+    }
+
     func uploadFile(_ fileURL: URL, filename: String? = nil, description: String = "") async throws -> String {
         let accessToken = try await ensureValidToken()
         let name = filename ?? fileURL.lastPathComponent
@@ -250,7 +306,7 @@ final class GoogleDriveClient {
         let bodyURL = tempDir.appendingPathComponent("gdrive_upload_\(UUID().uuidString).tmp")
 
         let headerData = "--\(boundary)\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n".data(using: .utf8)!
-        let midData = "\r\n--\(boundary)\r\nContent-Type: application/pdf\r\n\r\n".data(using: .utf8)!
+        let midData = "\r\n--\(boundary)\r\nContent-Type: \(GoogleDriveClient.mimeType(for: fileURL))\r\n\r\n".data(using: .utf8)!
         let footerData = "\r\n--\(boundary)--\r\n".data(using: .utf8)!
 
         try Data().write(to: bodyURL)

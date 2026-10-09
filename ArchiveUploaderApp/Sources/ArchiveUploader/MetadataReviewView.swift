@@ -54,7 +54,7 @@ struct MetadataReviewView: View {
             VStack(alignment: .leading, spacing: 1) {
                 Text("Review Metadata")
                     .font(.system(size: 15, weight: .semibold))
-                Text("LM Studio extracted this from the archive page")
+                Text("From archive.org metadata — edit before uploading")
                     .font(.system(size: 11, weight: .regular))
                     .foregroundStyle(.secondary)
             }
@@ -139,7 +139,7 @@ struct MetadataReviewView: View {
                     .background(Color.secondary.opacity(0.08))
                     .clipShape(RoundedRectangle(cornerRadius: 6))
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.pressFeedback)
             .keyboardShortcut(.cancelAction)
 
             Button(action: confirm) {
@@ -154,8 +154,9 @@ struct MetadataReviewView: View {
                 .padding(.vertical, 8)
                 .background(AppTheme.accent)
                 .clipShape(RoundedRectangle(cornerRadius: 6))
+                .shadow(color: .primary.opacity(0.18), radius: 3, y: 1)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.pressFeedback)
             .keyboardShortcut(.defaultAction)
         }
     }
@@ -177,15 +178,7 @@ struct MetadataReviewView: View {
     }
 
     func suggestedFilename(_ meta: ExtractedMetadata) -> String {
-        var parts: [String] = []
-        if !meta.author.isEmpty { parts.append(meta.author) }
-        if !meta.title.isEmpty { parts.append(meta.title) }
-        if !meta.year.isEmpty { parts.append(meta.year) }
-        let name = parts.isEmpty ? meta.identifier : parts.joined(separator: " - ")
-        let allowed = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 .,_-")
-        let safe = name.unicodeScalars.map { allowed.contains($0) ? String($0) : "-" }.joined()
-        let trimmed = String(safe.prefix(200))
-        return trimmed + ".pdf"
+        ArchiveClient.suggestFilename(from: meta, identifier: meta.identifier)
     }
 }
 
