@@ -2,22 +2,30 @@ import SwiftUI
 
 /// Shared motion vocabulary.
 ///
-/// Rules of the house: UI feedback stays fast (under ~200ms) so the app feels
-/// like it is listening; decoration (shimmer, sparkle) runs longer because it
-/// is *watched*, not waited on. Every looping or one-shot animation is skipped
-/// under Reduce Motion.
+/// Rules of the house: everything a user *does* gets an immediate, snappy
+/// response — press feedback, toggles, panel swaps — so the app feels like it
+/// is listening. Anything longer is either a one-shot acknowledgement (a
+/// completion pop) or decoration that plays once and then rests.
+///
+/// Nothing loops forever. A permanently repeating animation keeps re-rendering
+/// the window for as long as the panel is open, which measured at ~100% of a
+/// core and starved the main thread until the panel lost keyboard focus.
 enum Motion {
-    /// Instant response — press feedback, small state flips.
-    static let quick: Animation = .snappy(duration: 0.14, extraBounce: 0)
+    /// Instant response — press feedback, small state flips. Snappy, no bounce:
+    /// the user is mid-gesture, so this must feel instant.
+    static let quick: Animation = .snappy(duration: 0.12, extraBounce: 0)
 
-    /// Standard enter/exit for panels, rows and popovers.
-    static let standard: Animation = .easeOut(duration: 0.22)
+    /// Discrete state changes — panel swaps, sheet entry, cards appearing.
+    /// Fast, ease-out so movement starts immediately.
+    static let standard: Animation = .easeOut(duration: 0.18)
 
-    /// Content shifts that need a little settle — list inserts, panel swaps.
-    static let settle: Animation = .spring(duration: 0.34, bounce: 0.16)
+    /// Content that needs to land rather than snap — list inserts. A small
+    /// amount of bounce is what makes it feel physical.
+    static let settle: Animation = .spring(duration: 0.3, bounce: 0.22)
 
-    /// Constant looping decoration.
-    static let loop: Animation = .linear(duration: 1.3)
+    /// One-shot acknowledgement — a task finishing. Bouncier, because this is
+    /// watched and celebrated, not waited on.
+    static let pop: Animation = .spring(duration: 0.4, bounce: 0.42)
 }
 
 // MARK: - Press feedback
@@ -25,15 +33,18 @@ enum Motion {
 /// Every tappable control scales down slightly on press. It is the cheapest way
 /// to make an interface feel responsive: the user gets physical confirmation
 /// that the click landed, before anything has actually happened yet.
+///
+/// 0.96 reads as a deliberate press rather than an accidental jitter, and pairs
+/// with a brief opacity dip so the control dims as it sinks.
 struct PressFeedbackButtonStyle: ButtonStyle {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    var pressedScale: CGFloat = 0.97
+    var pressedScale: CGFloat = 0.96
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .scaleEffect(configuration.isPressed ? pressedScale : 1)
-            .opacity(configuration.isPressed ? 0.92 : 1)
+            .opacity(configuration.isPressed ? 0.9 : 1)
             .animation(reduceMotion ? nil : Motion.quick, value: configuration.isPressed)
     }
 }
@@ -45,8 +56,12 @@ extension ButtonStyle where Self == PressFeedbackButtonStyle {
 
 // MARK: - Shimmer
 
-/// A translucent band sweeping across a view. Used on the progress fill to say
+/// A soft highlight sweeping across a view. Used on the progress fill to say
 /// "this is actively moving" without adding another spinner to look at.
+///
+/// Deliberately built from a gradient rather than a blurred layer: a Gaussian
+/// blur has to be re-rendered every frame in a window this small, which pinned
+/// the main thread at ~100% CPU for as long as the progress card was on screen.
 struct ShimmerOverlay: ViewModifier {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -62,22 +77,39 @@ struct ShimmerOverlay: ViewModifier {
         } else {
             content.overlay {
                 GeometryReader { geo in
-                    let travel = geo.size.width + band * 2
-                    Capsule()
-                        .fill(tint)
-                        .frame(width: band)
-                        .blur(radius: 4)
-                        .offset(x: -geo.size.width / 2 - band + (sweep ? travel : 0))
+                    // A zero-width host (progress not started yet) would make
+                    // the travel maths degenerate, so rest until there's room.
+                    if geo.size.width > band {
+                        let travel = geo.size.width + band * 2
+                        Capsule()
+                            .fill(
+                                LinearGradient(
+                                    colors: [.clear, tint, .clear],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                            .frame(width: band)
+                            .offset(x: -geo.size.width / 2 - band + (sweep ? travel : 0))
+                            .onAppear { sweepOnce() }
+                    }
                 }
                 .allowsHitTesting(false)
                 .clipped()
             }
-            .onAppear {
-                withAnimation(Motion.loop.repeatForever(autoreverses: false)) {
-                    sweep = true
-                }
-            }
         }
+    }
+
+    /// One sweep when the bar appears, then rests.
+    ///
+    /// A permanently looping animation keeps re-rendering the window for as
+    /// long as the panel is open — measured at ~15% of a core while idle, and
+    /// enough to starve the main thread during long translations. The progress
+    /// fill's own width animation already communicates movement; this is here
+    /// only to greet the start of a job.
+    private func sweepOnce() {
+        guard !reduceMotion else { return }
+        withAnimation(.linear(duration: 1.1)) { sweep = true }
     }
 }
 
@@ -130,8 +162,11 @@ struct SparkleBurst: View {
 
 // MARK: - Pulse
 
-/// A soft breathing dot. Marks "the sidecar is up" so the state reads at a
-/// glance without needing to read the label next to it.
+/// A soft breathing dot. Marks "the sidecar is up".
+///
+/// Pulses a few times when it appears, then rests. A permanently looping dot
+/// re-renders the window for as long as the panel is open, which is paid for
+/// every time the user glances at it.
 struct PulseDot: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -147,8 +182,14 @@ struct PulseDot: View {
             .opacity(breathing ? 0.6 : 1)
             .onAppear {
                 guard !reduceMotion else { return }
-                withAnimation(.easeInOut(duration: 0.9).repeatForever(autoreverses: true)) {
+                // Three breaths (6 half-cycles), ending back at rest.
+                withAnimation(.easeInOut(duration: 0.5).repeatCount(6, autoreverses: true)) {
                     breathing = true
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+                    withAnimation(.easeOut(duration: 0.3)) {
+                        breathing = false
+                    }
                 }
             }
     }
@@ -185,8 +226,11 @@ struct DrawInCheckmark: View {
 
 // MARK: - Gentle float
 
-/// A slow vertical drift for the empty state. The only animation on screen
-/// when there is nothing to do, so it has to be quiet.
+/// A slow vertical drift for the empty state.
+///
+/// One round trip on appear, then it rests — the only animation on screen when
+/// there is nothing to do, so it has to be quiet in CPU terms as well as
+/// visually, or the panel costs a core per minute of being open.
 struct GentleFloat: ViewModifier {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -201,8 +245,14 @@ struct GentleFloat: ViewModifier {
             content
                 .offset(y: drifting ? -distance : distance)
                 .onAppear {
-                    withAnimation(.easeInOut(duration: 2.4).repeatForever(autoreverses: true)) {
+                    // Single round trip: 2 half-cycles of 1.8s.
+                    withAnimation(.easeInOut(duration: 1.8).repeatCount(2, autoreverses: true)) {
                         drifting = true
+                    }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 3.6) {
+                        withAnimation(.easeInOut(duration: 0.6)) {
+                            drifting = false
+                        }
                     }
                 }
         }

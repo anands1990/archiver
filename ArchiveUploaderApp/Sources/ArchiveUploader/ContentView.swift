@@ -3,6 +3,7 @@ import UniformTypeIdentifiers
 
 struct ContentView: View {
     @Environment(TaskStore.self) var store
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var urlInput = ""
     @State private var showingSettings = false
     @State private var showClearConfirmation = false
@@ -10,6 +11,7 @@ struct ContentView: View {
     @State private var queueCount = 0
     @State private var progressShake: CGFloat = 0
     @State private var buttonShake: CGFloat = 0
+    @State private var headerPulse = false
     @State private var translateEnabled = AppConfig.translatorEnabled
     private let sidecar = SidecarProcess.shared
     private let pipeline = UploadPipeline()
@@ -67,6 +69,9 @@ struct ContentView: View {
                     RoundedRectangle(cornerRadius: 8)
                         .strokeBorder(.primary.opacity(0.06), lineWidth: 0.5)
                 )
+                // A small pop when a book lands — value-triggered, then rests.
+                .scaleEffect(headerPulse ? 1.12 : 1)
+                .animation(reduceMotion ? nil : Motion.pop, value: headerPulse)
 
             Text(showingSettings ? "Settings" : "Archiver")
                 .font(.system(size: 15, weight: .semibold))
@@ -99,7 +104,12 @@ struct ContentView: View {
                 VStack(spacing: 8) {
                     if store.isProcessing {
                         progressCard
-                            .transition(.opacity.combined(with: .scale(scale: 0.97, anchor: .top)))
+                            .transition(
+                                .asymmetric(
+                                    insertion: .opacity.combined(with: .scale(scale: 0.97, anchor: .top)),
+                                    removal: .opacity
+                                )
+                            )
                     }
                     historySection
                 }
@@ -262,7 +272,6 @@ struct ContentView: View {
                             height: 6
                         )
                         .shimmer(band: 40, tint: .white.opacity(0.55))
-                        .animation(.easeOut(duration: 0.3), value: store.currentProgress ?? 0)
                 }
             }
             .frame(height: 6)
@@ -331,7 +340,7 @@ struct ContentView: View {
                     ForEach(Array(store.tasks.enumerated()), id: \.element.id) { index, task in
                         TaskRow(
                             task: task,
-                            entryDelay: Double(min(index, 5)) * 0.045,
+                            entryDelay: Double(min(index, 5)) * 0.035,
                             onRetry: task.status == .failed ? { retryUpload(task: task) } : nil
                         )
                     }
@@ -807,6 +816,20 @@ struct ContentView: View {
         }
     }
 
+    /// Snap the panel open the moment a book finishes: a fast, slightly bouncy
+    /// pop on the header icon, triggered only by this action.
+    func celebrateCompletion() {
+        guard !reduceMotion else { return }
+        withAnimation(Motion.pop) {
+            headerPulse = true
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+            withAnimation(.easeOut(duration: 0.25)) {
+                headerPulse = false
+            }
+        }
+    }
+
     func triggerProgressShake() {
         let values: [CGFloat] = [0, -6, 6, -4, 4, -2, 2, 0]
         for (i, v) in values.enumerated() {
@@ -954,6 +977,7 @@ struct ContentView: View {
                     driveLink: result.driveLink
                 )
             }
+            celebrateCompletion()
         } catch let error as ArchiveError {
             if case .alreadyExists = error {
                 withAnimation(.spring(duration: 0.3)) {
@@ -1027,7 +1051,7 @@ struct StepDots: View {
                 Capsule()
                     .fill(stepColor(for: step))
                     .frame(width: step == activeStep ? 20 : 6, height: 3)
-                    .animation(.easeInOut(duration: 0.25), value: activeStep)
+                    .animation(.easeOut(duration: 0.2), value: activeStep)
             }
         }
     }
@@ -1127,9 +1151,10 @@ struct TaskRow: View {
                 .strokeBorder(AppTheme.subtleBorder, lineWidth: 1)
         )
         .opacity(appeared ? 1 : 0)
-        .offset(y: appeared ? 0 : 8)
+        .offset(y: appeared ? 0 : 6)
         .onAppear {
-            withAnimation(Motion.settle.delay(entryDelay)) {
+            // Tight stagger so a batch lands without feeling like a queue.
+            withAnimation(Motion.settle.delay(min(entryDelay, 0.12))) {
                 appeared = true
             }
         }

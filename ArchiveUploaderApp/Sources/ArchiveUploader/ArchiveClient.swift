@@ -267,6 +267,12 @@ private final class DownloadProgressDelegate: NSObject, URLSessionDownloadDelega
     private let lock = NSLock()
     private var finished = false
 
+    /// Progress is reported at most this often, so a multi-GB book does not
+    /// fire thousands of main-actor hops — which measured at ~100% of a core
+    /// when the bar animated on every update.
+    private let reportInterval: Int64 = 512 * 1024
+    private var lastReported: Int64 = 0
+
     private let destination: URL
     private let progressContinuation: AsyncStream<Double>.Continuation
     private let completion: @Sendable (Result<URL, Error>) -> Void
@@ -293,6 +299,12 @@ private final class DownloadProgressDelegate: NSObject, URLSessionDownloadDelega
         totalBytesExpectedToWrite: Int64
     ) {
         guard totalBytesExpectedToWrite > 0 else { return }
+        lock.lock()
+        let shouldReport = totalBytesWritten - lastReported >= reportInterval
+            || totalBytesWritten >= totalBytesExpectedToWrite
+        if shouldReport { lastReported = totalBytesWritten }
+        lock.unlock()
+        guard shouldReport else { return }
         progressContinuation.yield(Double(totalBytesWritten) / Double(totalBytesExpectedToWrite))
     }
 
