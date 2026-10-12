@@ -30,7 +30,7 @@ struct ContentView: View {
                 Spacer()
                 Button(action: { NSApp.terminate(nil) }) {
                     Text("Quit Archiver")
-                        .font(.system(size: 10, weight: .medium))
+                        .font(TextStyle.caption).fontWeight(.medium)
                         .foregroundStyle(.secondary.opacity(0.6))
                 }
                 .buttonStyle(.plain)
@@ -74,13 +74,13 @@ struct ContentView: View {
                 .animation(reduceMotion ? nil : Motion.pop, value: headerPulse)
 
             Text(showingSettings ? "Settings" : "Archiver")
-                .font(.system(size: 15, weight: .semibold))
+                .font(TextStyle.title).fontWeight(.semibold)
 
             Spacer()
 
             Button(action: toggleSettings) {
                 Image(systemName: showingSettings ? "xmark" : "gearshape")
-                    .font(.system(size: 13, weight: .medium))
+                    .font(TextStyle.body).fontWeight(.medium)
                     .foregroundStyle(.secondary)
                     .frame(width: 26, height: 26)
                     .contentShape(Rectangle())
@@ -128,10 +128,10 @@ struct ContentView: View {
             HStack(spacing: 8) {
                 Image(systemName: isDropTarget ? "arrow.down.doc" : "link")
                     .foregroundStyle(isDropTarget ? AppTheme.accent : .secondary)
-                    .font(.system(size: 12, weight: .medium))
+                    .font(TextStyle.callout).fontWeight(.medium)
                     .animation(.easeInOut(duration: 0.15), value: isDropTarget)
                 TextField("Paste archive.org link...", text: $urlInput)
-                    .font(.system(size: 13))
+                    .font(TextStyle.body)
                     .textFieldStyle(.plain)
                 if !urlInput.isEmpty {
                     Button(action: { urlInput = "" }) {
@@ -144,7 +144,7 @@ struct ContentView: View {
                 }
                 Button(action: pasteFromClipboard) {
                     Image(systemName: "doc.on.clipboard")
-                        .font(.system(size: 12))
+                        .font(TextStyle.callout)
                         .foregroundStyle(.secondary)
                 }
                 .buttonStyle(.pressFeedback)
@@ -172,9 +172,9 @@ struct ContentView: View {
                 Toggle(isOn: $translateEnabled) {
                     HStack(spacing: 4) {
                         Image(systemName: "character.bubble")
-                            .font(.system(size: 10))
+                            .font(TextStyle.caption)
                         Text("Translate to English")
-                            .font(.system(size: 10, weight: .medium))
+                            .font(TextStyle.caption).fontWeight(.medium)
                     }
                 }
                 .toggleStyle(.switch)
@@ -200,9 +200,9 @@ struct ContentView: View {
                 Button(action: previewMetadata) {
                     HStack(spacing: 4) {
                         Image(systemName: "sparkles")
-                            .font(.system(size: 12))
+                            .font(TextStyle.callout)
                         Text("Preview")
-                            .font(.system(size: 12, weight: .medium))
+                            .font(TextStyle.callout).fontWeight(.medium)
                     }
                     .foregroundStyle(.primary)
                     .frame(maxWidth: .infinity)
@@ -221,9 +221,9 @@ struct ContentView: View {
                 Button(action: submitDirect) {
                     HStack(spacing: 4) {
                         Image(systemName: "arrow.down.circle")
-                            .font(.system(size: 12))
+                            .font(TextStyle.callout)
                         Text(queueCount > 0 ? "Upload \(queueCount)" : "Upload")
-                            .font(.system(size: 12, weight: .semibold))
+                            .font(TextStyle.callout).fontWeight(.semibold)
                     }
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
@@ -246,11 +246,11 @@ struct ContentView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
                 Image(systemName: statusIcon)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(TextStyle.body).fontWeight(.medium)
                     .foregroundStyle(AppTheme.accent)
                     .contentTransition(.symbolEffect(.replace))
                 Text(store.currentMessage)
-                    .font(.system(size: 12, weight: .medium))
+                    .font(TextStyle.callout).fontWeight(.medium)
                     .lineLimit(1)
                     .contentTransition(.numericText())
                 Spacer()
@@ -314,14 +314,14 @@ struct ContentView: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Text("Recent")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(TextStyle.footnote).fontWeight(.semibold)
                     .foregroundStyle(.secondary)
                 Spacer()
                 if !store.tasks.isEmpty {
                     Button("Clear") {
                         showClearConfirmation = true
                     }
-                    .font(.system(size: 11, weight: .medium))
+                    .font(TextStyle.footnote).fontWeight(.medium)
                     .foregroundStyle(.secondary.opacity(0.7))
                     .buttonStyle(.pressFeedback)
                     .confirmationDialog("Clear all uploads?", isPresented: $showClearConfirmation, titleVisibility: .visible) {
@@ -356,10 +356,10 @@ struct ContentView: View {
                 .foregroundStyle(.secondary.opacity(0.2))
                 .gentleFloat()
             Text("Drop archive.org links here")
-                .font(.system(size: 12, weight: .medium))
+                .font(TextStyle.callout).fontWeight(.medium)
                 .foregroundStyle(.secondary.opacity(0.4))
             Text("Supports batch uploads")
-                .font(.system(size: 10, weight: .regular))
+                .font(TextStyle.caption)
                 .foregroundStyle(.secondary.opacity(0.3))
         }
         .frame(maxWidth: .infinity)
@@ -411,16 +411,16 @@ struct ContentView: View {
 
             HStack(spacing: 6) {
                 Image(systemName: sidecar.status == .running ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 10))
+                    .font(TextStyle.caption)
                     .foregroundStyle(sidecar.status == .running ? .green : .secondary)
                     .symbolEffect(.bounce, value: sidecar.status == .running)
                 Text(translatorStatusLabel)
-                    .font(.system(size: 10))
+                    .font(TextStyle.caption)
                     .foregroundStyle(.secondary)
                 Spacer()
                 Button(action: toggleSidecar) {
                     Text(sidecar.status == .running || sidecar.status == .starting ? "Stop" : "Start")
-                        .font(.system(size: 10, weight: .semibold))
+                        .font(TextStyle.caption).fontWeight(.semibold)
                         .foregroundStyle(.white)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
@@ -465,17 +465,17 @@ struct ContentView: View {
             if !sidecar.lastError.isEmpty, sidecar.status == .failed {
                 HStack(spacing: 4) {
                     Image(systemName: "exclamationmark.triangle.fill")
-                        .font(.system(size: 9))
+                        .font(TextStyle.caption)
                         .foregroundStyle(.red)
                     Text(sidecar.lastError)
-                        .font(.system(size: 9))
+                        .font(TextStyle.caption)
                         .foregroundStyle(.red)
                         .lineLimit(3)
                 }
             }
 
             Text("IndicTrans2 sidecar for Sanskrit → English. OCR lang used only when archive.org has no text layer.")
-                .font(.system(size: 9))
+                .font(TextStyle.caption)
                 .foregroundStyle(.secondary.opacity(0.5))
         }
     }
@@ -503,10 +503,10 @@ struct ContentView: View {
 
             HStack(spacing: 6) {
                 Image(systemName: settingsCredentialsStatus.isEmpty ? "exclamationmark.triangle" : "checkmark")
-                    .font(.system(size: 10))
+                    .font(TextStyle.caption)
                     .foregroundStyle(settingsCredentialsStatus.isEmpty ? .secondary : .primary)
                 Text(settingsCredentialsStatus.isEmpty ? "Not configured" : settingsCredentialsStatus)
-                    .font(.system(size: 10))
+                    .font(TextStyle.caption)
                     .foregroundStyle(settingsCredentialsStatus.isEmpty ? .secondary : .primary)
                 Spacer()
             }
@@ -514,7 +514,7 @@ struct ContentView: View {
             if settingsEditingCredentials {
                 VStack(alignment: .leading, spacing: 6) {
                     TextEditor(text: $settingsEditorJSON)
-                        .font(.system(size: 10, design: .monospaced))
+                        .font(TextStyle.mono)
                         .frame(minHeight: 100, maxHeight: 100)
                         .padding(3)
                         .background(AppTheme.surface)
@@ -530,10 +530,10 @@ struct ContentView: View {
                     if !settingsEditorError.isEmpty {
                         HStack(spacing: 4) {
                             Image(systemName: "exclamationmark.triangle.fill")
-                                .font(.system(size: 9))
+                                .font(TextStyle.caption)
                                 .foregroundStyle(.red)
                             Text(settingsEditorError)
-                                .font(.system(size: 9))
+                                .font(TextStyle.caption)
                                 .foregroundStyle(.red)
                         }
                     }
@@ -541,7 +541,7 @@ struct ContentView: View {
                     HStack(spacing: 6) {
                         Button(action: { settingsEditingCredentials = false }) {
                             Text("Cancel")
-                                .font(.system(size: 10, weight: .medium))
+                                .font(TextStyle.caption).fontWeight(.medium)
                                 .foregroundStyle(.secondary)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 5)
@@ -553,9 +553,9 @@ struct ContentView: View {
                         Button(action: saveInlineCredentials) {
                             HStack(spacing: 4) {
                                 Image(systemName: "checkmark")
-                                    .font(.system(size: 9))
+                                    .font(TextStyle.caption)
                                 Text("Save")
-                                    .font(.system(size: 10, weight: .semibold))
+                                    .font(TextStyle.caption).fontWeight(.semibold)
                             }
                             .foregroundStyle(.white)
                             .frame(maxWidth: .infinity)
@@ -572,9 +572,9 @@ struct ContentView: View {
                     Button(action: { settingsEditingCredentials = true }) {
                         HStack(spacing: 4) {
                             Image(systemName: settingsCredentialsStatus.isEmpty ? "plus" : "pencil")
-                                .font(.system(size: 9))
+                                .font(TextStyle.caption)
                             Text(settingsCredentialsStatus.isEmpty ? "Add" : "Edit")
-                                .font(.system(size: 10, weight: .medium))
+                                .font(TextStyle.caption).fontWeight(.medium)
                         }
                         .foregroundStyle(.white)
                         .padding(.horizontal, 8)
@@ -588,9 +588,9 @@ struct ContentView: View {
                         Button(action: authenticateInlineDrive) {
                             HStack(spacing: 4) {
                                 Image(systemName: "lock.open")
-                                    .font(.system(size: 9))
+                                    .font(TextStyle.caption)
                                 Text(settingsIsAuthenticating ? "…" : "Auth")
-                                    .font(.system(size: 10, weight: .medium))
+                                    .font(TextStyle.caption).fontWeight(.medium)
                             }
                             .foregroundStyle(.white)
                             .padding(.horizontal, 8)
@@ -604,9 +604,9 @@ struct ContentView: View {
                         Button(action: deleteInlineCredentials) {
                             HStack(spacing: 4) {
                                 Image(systemName: "trash")
-                                    .font(.system(size: 9))
+                                    .font(TextStyle.caption)
                                 Text("Remove")
-                                    .font(.system(size: 10, weight: .medium))
+                                    .font(TextStyle.caption).fontWeight(.medium)
                             }
                             .foregroundStyle(.red)
                             .padding(.horizontal, 8)
@@ -626,10 +626,10 @@ struct ContentView: View {
             if !settingsAuthError.isEmpty {
                 HStack(spacing: 4) {
                     Image(systemName: "exclamationmark.triangle.fill")
-                        .font(.system(size: 9))
+                        .font(TextStyle.caption)
                         .foregroundStyle(.red)
                     Text(settingsAuthError)
-                        .font(.system(size: 9))
+                        .font(TextStyle.caption)
                         .foregroundStyle(.red)
                 }
             }
@@ -644,7 +644,7 @@ struct ContentView: View {
                     AppConfig.driveFolderID = newValue
                 }
             Text("Blank = Drive root")
-                .font(.system(size: 9))
+                .font(TextStyle.caption)
                 .foregroundStyle(.secondary.opacity(0.5))
         }
     }
@@ -654,7 +654,7 @@ struct ContentView: View {
             settingsSectionHeader(icon: "folder", title: "Downloads")
             HStack {
                 Text(settingsDownloadPath)
-                    .font(.system(size: 10, design: .monospaced))
+                    .font(TextStyle.mono)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                     .truncationMode(.middle)
@@ -662,21 +662,20 @@ struct ContentView: View {
                 Button("Open") {
                     NSWorkspace.shared.open(URL(fileURLWithPath: settingsDownloadPath))
                 }
-                .font(.system(size: 10, weight: .medium))
+                .font(TextStyle.caption).fontWeight(.medium)
                 .buttonStyle(.pressFeedback)
             }
         }
     }
 
     func settingsSectionHeader(icon: String, title: String) -> some View {
-        HStack(spacing: 4) {
+        HStack(spacing: Spacing.tight) {
             Image(systemName: icon)
-                .font(.system(size: 10))
+                .font(TextStyle.callout)
                 .foregroundStyle(.secondary)
             Text(title)
-                .font(.system(size: 10, weight: .semibold, design: .default))
+                .font(TextStyle.title)
                 .foregroundStyle(.secondary)
-                .textCase(.uppercase)
             Spacer()
         }
     }
@@ -684,16 +683,16 @@ struct ContentView: View {
     func settingsLabelField(icon: String, label: String, text: Binding<String>, placeholder: String) -> some View {
         HStack(spacing: 5) {
             Image(systemName: icon)
-                .font(.system(size: 9))
+                .font(TextStyle.caption)
                 .foregroundStyle(.secondary)
             TextField(placeholder, text: text)
-                .font(.system(size: 11))
+                .font(TextStyle.footnote)
                 .textFieldStyle(.plain)
             if !text.wrappedValue.isEmpty {
                 Button(action: { text.wrappedValue = "" }) {
                     Image(systemName: "xmark.circle.fill")
                         .foregroundStyle(.secondary.opacity(0.4))
-                        .font(.system(size: 11))
+                        .font(TextStyle.footnote)
                 }
                 .buttonStyle(.pressFeedback)
             }
@@ -728,10 +727,10 @@ struct ContentView: View {
     var modelPicker: some View {
         HStack(spacing: 5) {
             Image(systemName: "cpu")
-                .font(.system(size: 9))
+                .font(TextStyle.caption)
                 .foregroundStyle(.secondary)
             Text("Model")
-                .font(.system(size: 11))
+                .font(TextStyle.footnote)
             Spacer()
             Picker("Model", selection: $translatorModelChoice) {
                 ForEach(AppConfig.TranslatorModelChoice.allCases) { choice in
@@ -756,10 +755,10 @@ struct ContentView: View {
     var modelNote: some View {
         HStack(alignment: .top, spacing: 4) {
             Image(systemName: "info.circle")
-                .font(.system(size: 9))
+                .font(TextStyle.caption)
                 .foregroundStyle(.secondary.opacity(0.7))
             Text("Both sizes are the same IndicTrans2 family, so switching gains little — the 1B is ~4× larger, slower to load and translate, with no meaningful quality gain. Restart the translator afterwards.")
-                .font(.system(size: 9))
+                .font(TextStyle.caption)
                 .foregroundStyle(.secondary.opacity(0.7))
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -1092,7 +1091,7 @@ struct TaskRow: View {
                     DrawInCheckmark()
                 } else {
                     Image(systemName: statusIcon)
-                        .font(.system(size: 11, weight: .medium))
+                        .font(TextStyle.footnote).fontWeight(.medium)
                         .foregroundStyle(statusColor)
                 }
                 if celebrating {
@@ -1106,10 +1105,10 @@ struct TaskRow: View {
 
             VStack(alignment: .leading, spacing: 1) {
                 Text(task.title ?? task.url.truncated(to: 32))
-                    .font(.system(size: 12, weight: .medium))
+                    .font(TextStyle.callout).fontWeight(.medium)
                     .lineLimit(1)
                 Text(task.message)
-                    .font(.system(size: 10, weight: .regular))
+                    .font(TextStyle.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                 if isInFlight {
@@ -1125,7 +1124,7 @@ struct TaskRow: View {
                     NSWorkspace.shared.open(url)
                 }) {
                     Image(systemName: "arrow.up.forward")
-                        .font(.system(size: 11, weight: .medium))
+                        .font(TextStyle.footnote).fontWeight(.medium)
                         .foregroundStyle(.secondary.opacity(0.6))
                 }
                 .buttonStyle(.pressFeedback)
@@ -1135,7 +1134,7 @@ struct TaskRow: View {
             if let retry = onRetry {
                 Button(action: retry) {
                     Image(systemName: "arrow.clockwise")
-                        .font(.system(size: 11, weight: .medium))
+                        .font(TextStyle.footnote).fontWeight(.medium)
                         .foregroundStyle(AppTheme.accent)
                 }
                 .buttonStyle(.pressFeedback)

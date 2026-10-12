@@ -53,9 +53,9 @@ struct MetadataReviewView: View {
 
             VStack(alignment: .leading, spacing: 1) {
                 Text("Review Metadata")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(TextStyle.title).fontWeight(.semibold)
                 Text("From archive.org metadata — edit before uploading")
-                    .font(.system(size: 11, weight: .regular))
+                    .font(TextStyle.footnote)
                     .foregroundStyle(.secondary)
             }
             Spacer()
@@ -68,16 +68,15 @@ struct MetadataReviewView: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Image(systemName: "doc.text")
-                    .font(.system(size: 11))
+                    .font(TextStyle.footnote)
                     .foregroundStyle(.secondary)
                 Text("Filename Preview")
-                    .font(.system(size: 10, weight: .semibold))
+                    .font(TextStyle.title)
                     .foregroundStyle(.secondary)
-                    .textCase(.uppercase)
                 Spacer()
             }
             Text(suggestedFilename(meta))
-                .font(.system(size: 12, weight: .medium, design: .monospaced))
+                .font(TextStyle.mono).fontWeight(.medium)
                 .foregroundStyle(.primary)
                 .lineLimit(2)
                 .padding(10)
@@ -103,21 +102,20 @@ struct MetadataReviewView: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Image(systemName: "text.quote")
-                    .font(.system(size: 11))
+                    .font(TextStyle.footnote)
                     .foregroundStyle(.secondary)
                 Text("Description / Summary")
-                    .font(.system(size: 10, weight: .semibold))
+                    .font(TextStyle.title)
                     .foregroundStyle(.secondary)
-                    .textCase(.uppercase)
                 Spacer()
                 if let draft {
                     Text("\(draft.description.count)")
-                        .font(.system(size: 10))
+                        .font(TextStyle.caption)
                         .foregroundStyle(.secondary.opacity(0.5))
                 }
             }
             TextEditor(text: metaBinding(\.description))
-                .font(.system(size: 12))
+                .font(TextStyle.callout)
                 .frame(minHeight: 70, maxHeight: 100)
                 .background(AppTheme.surface)
                 .clipShape(RoundedRectangle(cornerRadius: 6))
@@ -132,7 +130,7 @@ struct MetadataReviewView: View {
         HStack(spacing: 10) {
             Button(action: onCancel) {
                 Text("Cancel")
-                    .font(.system(size: 13, weight: .medium))
+                    .font(TextStyle.body).fontWeight(.medium)
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 8)
@@ -145,9 +143,9 @@ struct MetadataReviewView: View {
             Button(action: confirm) {
                 HStack(spacing: 4) {
                     Image(systemName: "arrow.down.circle")
-                        .font(.system(size: 12))
+                        .font(TextStyle.callout)
                     Text("Download & Upload")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(TextStyle.body).fontWeight(.semibold)
                 }
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
@@ -192,15 +190,14 @@ struct MetadataField: View {
         VStack(alignment: .leading, spacing: 5) {
             HStack(spacing: 4) {
                 Image(systemName: icon)
-                    .font(.system(size: 10))
+                    .font(TextStyle.caption)
                     .foregroundStyle(.secondary)
                 Text(label)
-                    .font(.system(size: 10, weight: .semibold))
+                    .font(TextStyle.title)
                     .foregroundStyle(.secondary)
-                    .textCase(.uppercase)
             }
             TextField(placeholder, text: $text)
-                .font(.system(size: 12))
+                .font(TextStyle.callout)
                 .textFieldStyle(.plain)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 7)
